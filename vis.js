@@ -305,12 +305,12 @@ d3.csv("epi2014.csv", function(err, data) {
     	position: 'bottomleft'
     });
     legend.onAdd = function() {
-    	var div = L.DomUtil.create('div', 'Legend'),
+    	var div = L.DomUtil.create('div', 'legend'),
       	values = [10,20,30,40,50,60,70,80,90];
       div.innerHTML += 'EPI SCORE<br>';
       for (var i = 0; i < values.length; i++) {
       	div.innerHTML +=
-        	'<i style="background:' + setColorByForLegend(values[i] + 1) + '"></i> ' 									+ values[i] + (values[i + 1] ? ' &ndash; ' + values[i + 1] + 												'<br>' : '+');
+        	'<i style="background:' + setColorByForLegend(values[i] + 1) + '"></i> '+ values[i] + (values[i + 1] ? ' &ndash; ' + values[i + 1] +'<br>' : '+');
       }
       return div;
     };

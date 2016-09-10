@@ -1,18 +1,11 @@
 
 var margin = {top: 20, right: 10, bottom: 30, left: 200},
-    width = 700 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+    width = 900 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
 
-var xScale_h = d3.scaleLinear().range([0, width]);
+var xScale = d3.scaleLinear().range([0, width]);
 
-var yScale_h = d3.scaleBand().range([0, height]);
-
-
-var xScale = d3.scaleBand()
-	.range([0, width]);
-
-var yScale = d3.scaleLinear()
-	.range([height,0]);
+var yScale = d3.scaleBand().range([0, height]);
 
 var colScale = d3.scaleOrdinal(d3.schemeCategory20);
 
@@ -40,14 +33,14 @@ var xAxis2 = svg2.append("g")
 var yAxis2 = svg2.append("g")
 	.attr("class", "axis y--axis");
 
-function update_h(svgChart, myData, attrX, attrY, xAxis, yAxis){
+function update(svgChart, myData, attrX, attrY, xAxis, yAxis, titleDiv, title){
     var fnAccX = function(d) { return d[attrX]; };
     var fnAccY = function(d) { return d[attrY]; };
 
     var spaceForBar = (height/myData.length) - BAR_WIDTH;
 
-    xScale_h.domain([0, d3.max(myData, fnAccX)]);
-    yScale_h.domain(myData.map(fnAccY));
+    xScale.domain([0, d3.max(myData, fnAccX)]);
+    yScale.domain(myData.map(fnAccY));
 
     var bars = svgChart.selectAll(".bars")
   	.data(myData);
@@ -69,133 +62,130 @@ function update_h(svgChart, myData, attrX, attrY, xAxis, yAxis){
     bars.merge(barsEnter)
     	.attr("x", 0)
       .attr("y", function(d,i) {return (spaceForBar/2 + i * (BAR_WIDTH + spaceForBar));})
-      .style("fill", function(d,i) { return colScale(i); })
+      .style("fill", function (d) {return getColorByCategory(d.category);})
       .attr("height", BAR_WIDTH)
     	.transition().duration(1000)
     	.attr("width", function(d) {
-            var value = xScale_h(fnAccX(d));
+            var value = xScale(fnAccX(d));
             if(isNaN(value)){
                 return 0;
             }
             else {
                 return value;
             }
-
         });
 
-        xAxis
-        	.transition()
-          .duration(1000)
-        	.call(d3.axisTop(xScale_h).ticks(10));
+      xAxis
+      	.transition()
+        .duration(1000)
+      	.call(d3.axisTop(xScale).ticks(10));
 
-
-        yAxis
-        	.transition()
-          .duration(1000)
-        	.call(d3.axisLeft()
-        		.scale(yScale_h).tickArguments(function(d) {return yScale_h(fnAccY(d));}));;
+      yAxis
+      	.transition()
+        .duration(1000)
+      	.call(d3.axisLeft()
+      		.scale(yScale).tickArguments(function(d) {return yScale(fnAccY(d));}));
 }
 
-function update(svgChart, myData, attrX, attrY, xAxis, yAxis) {
-
-	var fnAccX = function(d) { return d[attrX]; };
-  var fnAccY = function(d) { return d[attrY]; };
-
-  var spaceForBar = (width/myData.length) - BAR_WIDTH;
-
-	xScale.domain(myData.map(fnAccX));
-  yScale.domain([0, d3.max(myData, fnAccY) ]);
-
-	var bars = svgChart.selectAll(".bars")
-  	.data(myData);
-
-  //Enter
-  var barsEnter = bars.enter()
-  	.append("rect")
-    .attr("class", "bars")
-    .attr("width", 0);
-
-  //Exit
- 	bars.exit()
-  	.transition()
-    .duration(1000)
-    .attr("width", 0)
-  	.remove();
-
-  //Update
-  bars.merge(barsEnter)
-  	.attr("x", function(d,i) {return (spaceForBar/2 + i * (BAR_WIDTH + spaceForBar));})
-    .attr("y", height)
-    .style("fill", function(d,i) { return colScale(i); })
-    .attr("width", BAR_WIDTH)
-  	.transition().duration(1000)
-  	.attr("y", function(d) {
-        return (yScale(fnAccY(d)));
-      })
-    .attr("height", function(d) {return (height - yScale(fnAccY(d))); });
-
-  xAxis
-  	.transition()
-    .duration(1000)
-  	.call(d3.axisBottom(xScale)
-      .tickArguments(function(d) {return xScale(fnAccX(d));}));
-
-  yAxis
-  	.transition()
-    .duration(1000)
-  	.call(d3.axisLeft()
-  		.scale(yScale)
-    	.ticks(10));
+function getColorByCategory(category) {
+  if (category === "Health Impacts") return "#fee8c8";
+  else if (category === "Air Quality") return "#fdbb84";
+  else if (category === "Water and Sanitation") return "#e34a33";
+  else if (category === "Water Resources") return "#edf8fb";
+  else if (category === "Agriculture") return "#bfd3e6";
+  else if (category === "Forests") return "#9ebcda";
+  else if (category === "Fisheries") return "#8c96c6";
+  else if (category === "Biodiversity and Habitat") return "#8856a7";
+  else if (category === "Climate and Energy") return "810f7c";
 }
 
 function selectedCountry(myData) {
-  window.location.hash = '#detail';
-	var info = d3.select("#detail");
-  var myDataArray = [];
+  window.location.hash = '#country';
+	var country = d3.select("#country");
+  country.select("h1").text(myData.Country);
 
-  for (var attr in myData) {
-    myDataArray.push( {"key":attr, "value":myData[attr]} );
-  }
+  var rank = d3.select("#rank");
+  rank.select("p").text("Rank: " + myData.Rank);
+
+  var EPI = d3.select("#EPI");
+  EPI.select("p").text("EPI: " + myData.EPI);
+
+  var change = d3.select("#change");
+  change.select("p").text("10-Year Percent Change: " + myData["10-Year Percent Change"]);
 
   var dataChart1 = [];
-  for (var attr1 in myData["Enviromental Healh"]) {
-    dataChart1.push( {"key":attr1, "value":myData["Enviromental Healh"][attr1]} );
-  }
-
   var dataChart2 = [];
-  for (var attr2 in myData["Ecosystem Vitality"]) {
-    dataChart2.push( {"key":attr2, "value":myData["Ecosystem Vitality"][attr2]} );
-  }
-
-  console.log(dataChart1);
-  //update(svg1, dataChart1, "key", "value", xAxis1, yAxis1);
-  //update(svg2, dataChart2, "key", "value", xAxis2, yAxis2);
-
-  update_h(svg1, dataChart1, "value", "key", xAxis1, yAxis1);
-  update_h(svg2, dataChart2, "value", "key", xAxis2, yAxis2);
-
-
-  info.select("h1").text(myData.Country);
-
-	var infoCountry =  info.selectAll(".legendRow")
-  	.data(myDataArray);
-
-  //Enter
-	var infoCountryEnter =  infoCountry.enter()
-  	.append("div")
-    .attr("class", "legendRow");
-
-  infoCountry
-    .merge(infoCountryEnter)
-    .style("font-size", "12pt" )
-  	.text(function (d) {
-      if (typeof(d.value) === "object"){
-        return d.key + ": " + d.value.Value;
-      }
-      return d.key + ": " + d.value;
+  for (var attr in myData["Enviromental Healh"]["Health Impacts"]){
+    dataChart1.push( {
+      "key":attr,
+      "value":myData["Enviromental Healh"]["Health Impacts"][attr],
+      "category":"Health Impacts"
     });
+  }
+  for (attr in myData["Enviromental Healh"]["Air Quality"]){
+    dataChart1.push( {
+      "key":attr,
+      "value":myData["Enviromental Healh"]["Air Quality"][attr],
+      "category":"Air Quality"
+    });
+  }
+  for (attr in myData["Enviromental Healh"]["Water and Sanitation"]){
+    dataChart1.push( {
+      "key":attr,
+      "value":myData["Enviromental Healh"]["Water and Sanitation"][attr],
+      "category":"Water and Sanitation"
+    });
+  }
+  for (attr in myData["Ecosystem Vitality"]["Water Resources"]){
+    dataChart2.push( {
+      "key":attr,
+      "value":myData["Ecosystem Vitality"]["Water Resources"][attr],
+      "category":"Water Resources"
+    });
+  }
+  for (attr in myData["Ecosystem Vitality"].Agriculture){
+    dataChart2.push( {
+      "key":attr,
+      "value":myData["Ecosystem Vitality"].Agriculture[attr],
+      "category":"Agriculture"
+    });
+  }
+  for (attr in myData["Ecosystem Vitality"].Forests){
+    dataChart2.push( {
+      "key":attr,
+      "value":myData["Ecosystem Vitality"].Forests[attr],
+      "category":"Forests"
+    });
+  }
+  for (attr in myData["Ecosystem Vitality"].Fisheries){
+    dataChart2.push( {
+      "key":attr,
+      "value":myData["Ecosystem Vitality"].Fisheries[attr],
+      "category":"Fisheries"
+    });
+  }
+  for (attr in myData["Ecosystem Vitality"]["Biodiversity and Habitat"]){
+    dataChart2.push( {
+      "key":attr,
+      "value":myData["Ecosystem Vitality"]["Biodiversity and Habitat"][attr],
+      "category":"Biodiversity and Habitat"
+    });
+  }
+  for (attr in myData["Ecosystem Vitality"]["Climate and Energy"]){
+    dataChart2.push( {
+      "key":attr,
+      "value":myData["Ecosystem Vitality"]["Climate and Energy"][attr],
+      "category":"Climate and Energy"
+    });
+  }
+  var title1 = d3.select("#titleChart1").select("p")
+    .text("Enviromental Healh: " + myData["Enviromental Healh"].Value);
+  var title2 = d3.select("#titleChart2").select("p")
+    .text("Ecosystem Vitality: " + myData["Ecosystem Vitality"].Value);
 
-  infoCountry.exit().remove();
+  update(svg1, dataChart1, "value", "key", xAxis1, yAxis1);
+  update(svg2, dataChart2, "value", "key", xAxis2, yAxis2);
+
 }
 
 d3.csv("epi2014.csv", function(err, data) {
@@ -223,35 +213,35 @@ d3.csv("epi2014.csv", function(err, data) {
           d.properties.indicators["Ecosystem Vitality"] = {};
           d.properties.indicators["Enviromental Healh"].Value = +e["Environmental Health"];
           d.properties.indicators["Ecosystem Vitality"].Value = +e["Ecosystem Vitality"];
-          d.properties.indicators["Enviromental Healh"]["Health Impacts"] = +e["EH - Health Impacts"];
-          d.properties.indicators["Enviromental Healh"]["Air Quality"] = +e["EH - Air Quality"];
-          d.properties.indicators["Enviromental Healh"]["Water and Sanitation"] = +e["EH -Water and Sanitation"];
-          d.properties.indicators["Ecosystem Vitality"]["Water Resources"] = +e["EV - Water Resources"];
-          d.properties.indicators["Ecosystem Vitality"].Agriculture = +e["EV - Agriculture"];
-          d.properties.indicators["Ecosystem Vitality"].Forests = +e["EV - Forests"];
-          d.properties.indicators["Ecosystem Vitality"].Fisheries = +e["EV - Fisheries"];
-          d.properties.indicators["Ecosystem Vitality"]["Biodiversity and Habitat"] = +e["EV- Biodiversity and Habitat"];
-          d.properties.indicators["Ecosystem Vitality"]["Climate and Energy"] = +e["EV - Climate and Energy"];
-          d.properties.indicators["Enviromental Healh"]["Child Mortality"] = +e["Child Mortality"];
-          d.properties.indicators["Enviromental Healh"]["Household Air Quality"] = +e["Household Air Quality"];
-          d.properties.indicators["Enviromental Healh"]["Air Pollution - Average Exposure to PM2.5"] = +e["Air Pollution - Average Exposure to PM2.5"];
-          d.properties.indicators["Enviromental Healh"]["Air Pollution - Average PM2.5 Exceedance"] = +e["Air Pollution - Average PM2.5 Exceedance"];
-          d.properties.indicators["Enviromental Healh"]["Access to Sanitation"] = +e["Access to Sanitation"];
-          d.properties.indicators["Enviromental Healh"]["Access to Drinking Water"] = +e["Access to Drinking Water"];
-          d.properties.indicators["Ecosystem Vitality"]["Wastewater Treatment"] = +e["Wastewater Treatment"];
-          d.properties.indicators["Ecosystem Vitality"]["Agricultural Subsidies"] = +e["Agricultural Subsidies"];
-          d.properties.indicators["Ecosystem Vitality"]["Pesticide Regulation"] = +e["Pesticide Regulation"];
-          d.properties.indicators["Ecosystem Vitality"]["Change in Forest Cover "] = +e["Change in Forest Cover "];
-          d.properties.indicators["Ecosystem Vitality"]["Fish Stocks"] = +e["Fish Stocks"];
-          d.properties.indicators["Ecosystem Vitality"]["Coastal Shelf Fishing Pressure"] = +e["Coastal Shelf Fishing Pressure"];
-          d.properties.indicators["Ecosystem Vitality"]["Terrestrial Protected Areas (National Biome Weights)"] = +e["Terrestrial Protected Areas (National Biome Weights)"];
-          d.properties.indicators["Ecosystem Vitality"]["Terrestrial Protected Areas (Global Biome Weights)"] = +e["Terrestrial Protected Areas (Global Biome Weights)"];
-          d.properties.indicators["Ecosystem Vitality"]["Marine Protected Areas"] = +e["Marine Protected Areas"];
-          d.properties.indicators["Ecosystem Vitality"]["Critical Habitat Protection"] = +e["Critical Habitat Protection"];
-          d.properties.indicators["Ecosystem Vitality"]["Trend in Carbon Intensity"] = +e["Trend in Carbon Intensity"];
-          d.properties.indicators["Ecosystem Vitality"]["Change of Trend in Carbon Intensity"] = +e["Change of Trend in Carbon Intensity"];
-          d.properties.indicators["Ecosystem Vitality"]["Trend in CO2 Emissions per KwH"] = +e["Trend in CO2 Emissions per KwH"];
-          d.properties.indicators["Ecosystem Vitality"]["Access to Electricity"] = +e["Access to Electricity"];
+          d.properties.indicators["Enviromental Healh"]["Health Impacts"] = {};
+          d.properties.indicators["Enviromental Healh"]["Air Quality"] = {};
+          d.properties.indicators["Enviromental Healh"]["Water and Sanitation"] = {};
+          d.properties.indicators["Ecosystem Vitality"]["Water Resources"] = {};
+          d.properties.indicators["Ecosystem Vitality"].Agriculture = {};
+          d.properties.indicators["Ecosystem Vitality"].Forests = {};
+          d.properties.indicators["Ecosystem Vitality"].Fisheries = {};
+          d.properties.indicators["Ecosystem Vitality"]["Biodiversity and Habitat"] = {};
+          d.properties.indicators["Ecosystem Vitality"]["Climate and Energy"] = {};
+          d.properties.indicators["Enviromental Healh"]["Health Impacts"]["Child Mortality"] = +e["Child Mortality"];
+          d.properties.indicators["Enviromental Healh"]["Air Quality"]["Household Air Quality"] = +e["Household Air Quality"];
+          d.properties.indicators["Enviromental Healh"]["Air Quality"]["Air Pollution - Average Exposure to PM2.5"] = +e["Air Pollution - Average Exposure to PM2.5"];
+          d.properties.indicators["Enviromental Healh"]["Air Quality"]["Air Pollution - Average PM2.5 Exceedance"] = +e["Air Pollution - Average PM2.5 Exceedance"];
+          d.properties.indicators["Enviromental Healh"]["Water and Sanitation"]["Access to Sanitation"] = +e["Access to Sanitation"];
+          d.properties.indicators["Enviromental Healh"]["Water and Sanitation"]["Access to Drinking Water"] = +e["Access to Drinking Water"];
+          d.properties.indicators["Ecosystem Vitality"]["Water Resources"]["Wastewater Treatment"] = +e["Wastewater Treatment"];
+          d.properties.indicators["Ecosystem Vitality"].Agriculture["Agricultural Subsidies"] = +e["Agricultural Subsidies"];
+          d.properties.indicators["Ecosystem Vitality"].Agriculture["Pesticide Regulation"] = +e["Pesticide Regulation"];
+          d.properties.indicators["Ecosystem Vitality"].Forests["Change in Forest Cover "] = +e["Change in Forest Cover "];
+          d.properties.indicators["Ecosystem Vitality"].Fisheries["Fish Stocks"] = +e["Fish Stocks"];
+          d.properties.indicators["Ecosystem Vitality"].Fisheries["Coastal Shelf Fishing Pressure"] = +e["Coastal Shelf Fishing Pressure"];
+          d.properties.indicators["Ecosystem Vitality"]["Biodiversity and Habitat"]["Terrestrial Protected Areas (National Biome Weights)"] = +e["Terrestrial Protected Areas (National Biome Weights)"];
+          d.properties.indicators["Ecosystem Vitality"]["Biodiversity and Habitat"]["Terrestrial Protected Areas (Global Biome Weights)"] = +e["Terrestrial Protected Areas (Global Biome Weights)"];
+          d.properties.indicators["Ecosystem Vitality"]["Biodiversity and Habitat"]["Marine Protected Areas"] = +e["Marine Protected Areas"];
+          d.properties.indicators["Ecosystem Vitality"]["Biodiversity and Habitat"]["Critical Habitat Protection"] = +e["Critical Habitat Protection"];
+          d.properties.indicators["Ecosystem Vitality"]["Climate and Energy"]["Trend in Carbon Intensity"] = +e["Trend in Carbon Intensity"];
+          d.properties.indicators["Ecosystem Vitality"]["Climate and Energy"]["Change of Trend in Carbon Intensity"] = +e["Change of Trend in Carbon Intensity"];
+          d.properties.indicators["Ecosystem Vitality"]["Climate and Energy"]["Trend in CO2 Emissions per KwH"] = +e["Trend in CO2 Emissions per KwH"];
+          d.properties.indicators["Ecosystem Vitality"]["Climate and Energy"]["Access to Electricity"] = +e["Access to Electricity"];
         }
       })
     });

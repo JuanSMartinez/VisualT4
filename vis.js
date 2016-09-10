@@ -1,3 +1,4 @@
+
 var margin = {top: 20, right: 10, bottom: 30, left: 200},
     width = 700 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
@@ -5,6 +6,7 @@ var margin = {top: 20, right: 10, bottom: 30, left: 200},
 var xScale_h = d3.scaleLinear().range([0, width]);
 
 var yScale_h = d3.scaleBand().range([0, height]);
+
 
 var xScale = d3.scaleBand()
 	.range([0, width]);

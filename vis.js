@@ -1,6 +1,10 @@
-var margin = {top: 20, right: 20, bottom: 30, left: 40},
-    width = 900 - margin.left - margin.right,
-    height = 300 - margin.top - margin.bottom;
+var margin = {top: 20, right: 10, bottom: 30, left: 200},
+    width = 700 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var xScale_h = d3.scaleLinear().range([0, width]);
+
+var yScale_h = d3.scaleBand().range([0, height]);
 
 var xScale = d3.scaleBand()
 	.range([0, width]);
@@ -10,7 +14,7 @@ var yScale = d3.scaleLinear()
 
 var colScale = d3.scaleOrdinal(d3.schemeCategory20);
 
-var BAR_WIDTH = 30;
+var BAR_WIDTH = 10;
 
 var svg1 = d3.select("#chart1").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -33,6 +37,55 @@ var xAxis2 = svg2.append("g")
 	.attr("class", "axis x--axis");
 var yAxis2 = svg2.append("g")
 	.attr("class", "axis y--axis");
+
+function update_h(svgChart, myData, attrX, attrY, xAxis, yAxis){
+    var fnAccX = function(d) { return d[attrX]; };
+    var fnAccY = function(d) { return d[attrY]; };
+
+    var spaceForBar = (height/myData.length) - BAR_WIDTH;
+
+    xScale_h.domain([0, d3.max(myData, fnAccX)]);
+    yScale_h.domain(myData.map(fnAccY));
+
+    var bars = svgChart.selectAll(".bars")
+  	.data(myData);
+
+    //Enter
+    var barsEnter = bars.enter()
+    	.append("rect")
+      .attr("class", "bars")
+      .attr("width", 0);
+
+    //Exit
+   	bars.exit()
+    	.transition()
+      .duration(1000)
+      .attr("width", 0)
+    	.remove();
+
+    //Update
+    bars.merge(barsEnter)
+    	.attr("x", 0)
+      .attr("y", function(d,i) {return (spaceForBar/2 + i * (BAR_WIDTH + spaceForBar));})
+      .style("fill", function(d,i) { return colScale(i); })
+      .attr("height", BAR_WIDTH)
+    	.transition().duration(1000)
+    	.attr("width", function(d) {
+          return (xScale_h(fnAccX(d)));
+        });
+
+        xAxis
+        	.transition()
+          .duration(1000)
+        	.call(d3.axisTop(xScale_h).ticks(10));
+
+
+        yAxis
+        	.transition()
+          .duration(1000)
+        	.call(d3.axisLeft()
+        		.scale(yScale_h).tickArguments(function(d) {return yScale_h(fnAccY(d));}));;
+}
 
 function update(svgChart, myData, attrX, attrY, xAxis, yAxis) {
 
@@ -106,8 +159,12 @@ function selectedCountry(myData) {
   }
 
   console.log(dataChart1);
-  update(svg1, dataChart1, "key", "value", xAxis1, yAxis1);
-  update(svg2, dataChart2, "key", "value", xAxis2, yAxis2);
+  //update(svg1, dataChart1, "key", "value", xAxis1, yAxis1);
+  //update(svg2, dataChart2, "key", "value", xAxis2, yAxis2);
+
+  update_h(svg1, dataChart1, "value", "key", xAxis1, yAxis1);
+  update_h(svg2, dataChart2, "value", "key", xAxis2, yAxis2);
+
 
   info.select("h1").text(myData.Country);
 

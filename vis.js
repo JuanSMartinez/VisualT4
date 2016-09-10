@@ -2,7 +2,7 @@ var margin = {top: 20, right: 20, bottom: 30, left: 40},
     width = 900 - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom;
 
-var xScale = d3.scaleOrdinal()
+var xScale = d3.scaleBand()
 	.range([0, width]);
 
 var yScale = d3.scaleLinear()
@@ -22,13 +22,6 @@ var xAxis = svg.append("g")
 	.attr("class", "axis x--axis");
 var yAxis = svg.append("g")
 	.attr("class", "axis y--axis");
-
-
-function filter(myData, attr, value) {
-	myData = myData.filter(function (d) {
-  	return d[attr] = value;
-  });
-}
 
 function update(myData, attrX, attrY) {
 
@@ -61,7 +54,9 @@ function update(myData, attrX, attrY) {
     .style("fill", function(d,i) { return colScale(i); })
     .attr("width", 2)
   	.transition().duration(1000)
-  	.attr("y", function(d) {return (yScale(fnAccY(d))); })
+  	.attr("y", function(d) {
+        return (yScale(fnAccY(d)));
+      })
     .attr("height", function(d) {return (height - yScale(fnAccY(d))); });
 
   xAxis
@@ -80,19 +75,28 @@ function update(myData, attrX, attrY) {
 }
 
 function selectedCountry(myData) {
-  console.log(myData);
-	var info = d3.select("#info");
-	var infoCountry =  info.selectAll("h1")
-  	.data(myData);
+  window.location.hash = '#detail';
+	var info = d3.select("#detail");
+  var myDataArray = [];
+
+  for (var attr in myData) {
+    myDataArray.push( {"key":attr, "value":myData[attr]} );
+  }
+
+  info.select("h1").text(myData.Country);
+
+	var infoCountry =  info.selectAll(".legendRow")
+  	.data(myDataArray);
 
   //Enter
 	var infoCountryEnter =  infoCountry.enter()
-  	.append("h1");
+  	.append("div")
+    .attr("class", "legendRow");
 
   infoCountry
     .merge(infoCountryEnter)
-    .style("font-size", "30" )
-  	.text(myData.name);
+    .style("font-size", "12pt" )
+  	.text(function (d) { return d.key + ": " + d.value; });
 
   infoCountry.exit().remove();
 }
@@ -104,37 +108,60 @@ d3.csv("epi2014.csv", function(err, data) {
     return;
   }
 
+  data.forEach(function (d) {
+    d["EPI Score"]=+d["EPI Score"];
+  });
+
 	$.getJSON("world.json",function(worldMap){
 
     worldMap.features.forEach(function(d){
       data.forEach(function (e){
         if(d.properties.name === e.Country){
-          d.properties.Rank = e.Rank;
-          d.properties.EPI = e["EPI Score"];
-          d.properties["10-Year Percent Change"] = e["10-Year Percent Change"];
-          d.properties["Environmental Health"] = e["Environmental Health"];
-          d.properties["Ecosystem Vitality"] = e["Ecosystem Vitality"];
-          d.properties["EH - Health Impacts"] = e["EH - Health Impacts"];
-          d.properties["EH - Air Quality"] = e["EH - Air Quality"];
-          d.properties["EH -Water and Sanitation"] = e["EH -Water and Sanitation"];
-          d.properties["EV - Water Resources"] = e["EV - Water Resources"];
-          d.properties["EV - Agriculture"] = e["EV - Agriculture"];
-          d.properties["EV - Forests"] = e["EV - Forests"];
-          d.properties["EV - Fisheries"] = e["EV - Fisheries"];
-          d.properties["EV- Biodiversity and Habitat"] = e["EV- Biodiversity and Habitat"];
-          d.properties["EV - Climate and Energy"] = e["EV - Climate and Energy"];
-          d.properties["Child Mortality"] = e["Child Mortality"];
-          d.properties["Household Air Quality"] = e["Household Air Quality"];
-          d.properties["Air Pollution - Average Exposure to PM2.5"] = e["Air Pollution - Average Exposure to PM2.5"];
-          d.properties["Air Pollution - Average PM2.5 Exceedance"] = e["Air Pollution - Average PM2.5 Exceedance"];
-          d.properties["Access to Sanitation"] = e["Access to Sanitation"];
-          d.properties["Access to Drinking Water"] = e["Access to Drinking Water"];
-          d.properties["Wastewater Treatment"] = e["Wastewater Treatment"];
+          d.properties.indicators = {};
+          d.properties.indicators.Country = e.Country;
+          d.properties.indicators.Rank = +e.Rank;
+          d.properties.indicators.EPI = +e["EPI Score"];
+          d.properties.indicators["10-Year Percent Change"] = +e["10-Year Percent Change"];
+          d.properties.indicators.EnviromentalHealh = {};
+          d.properties.indicators.EcosystemVitality = {};
+          d.properties.indicators.EnviromentalHealh.Value = +e["Environmental Health"];
+          d.properties.indicators.EcosystemVitality.Value = +e["Ecosystem Vitality"];
+          d.properties.indicators.EnviromentalHealh["Health Impacts"] = +e["EH - Health Impacts"];
+          d.properties.indicators.EnviromentalHealh["Air Quality"] = +e["EH - Air Quality"];
+          d.properties.indicators.EnviromentalHealh["Water and Sanitation"] = +e["EH -Water and Sanitation"];
+          d.properties.indicators.EcosystemVitality["Water Resources"] = +e["EV - Water Resources"];
+          d.properties.indicators.EcosystemVitality.Agriculture = +e["EV - Agriculture"];
+          d.properties.indicators.EcosystemVitality.Forests = +e["EV - Forests"];
+          d.properties.indicators.EcosystemVitality.Fisheries = +e["EV - Fisheries"];
+          d.properties.indicators.EcosystemVitality["Biodiversity and Habitat"] = +e["EV- Biodiversity and Habitat"];
+          d.properties.indicators.EcosystemVitality["Climate and Energy"] = +e["EV - Climate and Energy"];
+          d.properties.indicators.EnviromentalHealh["Child Mortality"] = +e["Child Mortality"];
+          d.properties.indicators.EnviromentalHealh["Household Air Quality"] = +e["Household Air Quality"];
+          d.properties.indicators.EnviromentalHealh["Air Pollution - Average Exposure to PM2.5"] = +e["Air Pollution - Average Exposure to PM2.5"];
+          d.properties.indicators.EnviromentalHealh["Air Pollution - Average PM2.5 Exceedance"] = +e["Air Pollution - Average PM2.5 Exceedance"];
+          d.properties.indicators.EnviromentalHealh["Access to Sanitation"] = +e["Access to Sanitation"];
+          d.properties.indicators.EnviromentalHealh["Access to Drinking Water"] = +e["Access to Drinking Water"];
+          d.properties.indicators.EcosystemVitality["Wastewater Treatment"] = +e["Wastewater Treatment"];
+          d.properties.indicators.EcosystemVitality["Agricultural Subsidies"] = +e["Agricultural Subsidies"];
+          d.properties.indicators.EcosystemVitality["Pesticide Regulation"] = +e["Pesticide Regulation"];
+          d.properties.indicators.EcosystemVitality["Change in Forest Cover "] = +e["Change in Forest Cover "];
+          d.properties.indicators.EcosystemVitality["Fish Stocks"] = +e["Fish Stocks"];
+          d.properties.indicators.EcosystemVitality["Coastal Shelf Fishing Pressure"] = +e["Coastal Shelf Fishing Pressure"];
+          d.properties.indicators.EcosystemVitality["Terrestrial Protected Areas (National Biome Weights)"] = +e["Terrestrial Protected Areas (National Biome Weights)"];
+          d.properties.indicators.EcosystemVitality["Terrestrial Protected Areas (Global Biome Weights)"] = +e["Terrestrial Protected Areas (Global Biome Weights)"];
+          d.properties.indicators.EcosystemVitality["Marine Protected Areas"] = +e["Marine Protected Areas"];
+          d.properties.indicators.EcosystemVitality["Critical Habitat Protection"] = +e["Critical Habitat Protection"];
+          d.properties.indicators.EcosystemVitality["Trend in Carbon Intensity"] = +e["Trend in Carbon Intensity"];
+          d.properties.indicators.EcosystemVitality["Change of Trend in Carbon Intensity"] = +e["Change of Trend in Carbon Intensity"];
+          d.properties.indicators.EcosystemVitality["Trend in CO2 Emissions per KwH"] = +e["Trend in CO2 Emissions per KwH"];
+          d.properties.indicators.EcosystemVitality["Access to Electricity"] = +e["Access to Electricity"];
         }
       })
     });
 
-		var map = L.map('map').setView([39, -1], 1.6);
+		var map = L.map('map', { zoomControl:false }).setView([39, -1], 1.8);
+    map.dragging.disable();
+    map.scrollWheelZoom.disable();
 		var layer = L.geoJson(worldMap, {
 			clickable: true,
 			style: function(feature) {
@@ -143,19 +170,19 @@ d3.csv("epi2014.csv", function(err, data) {
           color: "#0d174e",
           weight: 1,
           fill: true,
-          fillColor: setColorByEPI(feature.properties.EPI),
+          fillColor: setColorByEPI(feature.properties.indicators),
           fillOpacity: 1
         };
       },
       onEachFeature: function (feature, layer) {
     		layer.on({
-        	click: function(e) {selectedCountry(e.target.feature.properties);}
+        	click: function(e) {selectedCountry(e.target.feature.properties.indicators);}
     		});
 			},
     });
     layer.addTo(map);
     var legend = L.control({
-    	position: 'topleft'
+    	position: 'bottomleft'
     });
     legend.onAdd = function() {
     	var div = L.DomUtil.create('div', 'Legend'),
@@ -171,16 +198,18 @@ d3.csv("epi2014.csv", function(err, data) {
 	});
 
 
-  function setColorByEPI(epiScore) {
-    if (epiScore === undefined) return "#d9ef8b";
-    else if (epiScore > 90) return "#1a9850";
-    else if (epiScore > 80) return "#66bd63";
-    else if (epiScore > 70) return "#a6d96a";
-    else if (epiScore > 60) return "#d9ef8b";
-    else if (epiScore > 50) return "#ffffbf";
-    else if (epiScore > 40) return "#fee08b";
-    else if (epiScore > 30) return "#fdae61";
-    else if (epiScore > 20) return "#f46d43";
-    else if (epiScore > 10) return "#d73027";
+  function setColorByEPI(indicators) {
+    if (indicators === undefined) return "#d9ef8b";
+    else if (indicators.EPI > 90) return "#1a9850";
+    else if (indicators.EPI > 80) return "#66bd63";
+    else if (indicators.EPI > 70) return "#a6d96a";
+    else if (indicators.EPI > 60) return "#d9ef8b";
+    else if (indicators.EPI > 50) return "#ffffbf";
+    else if (indicators.EPI > 40) return "#fee08b";
+    else if (indicators.EPI > 30) return "#fdae61";
+    else if (indicators.EPI > 20) return "#f46d43";
+    else if (indicators.EPI > 10) return "#d73027";
   }
+
+
 });

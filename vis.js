@@ -9,6 +9,18 @@ var yScale = d3.scaleBand().range([0, height]);
 
 var colScale = d3.scaleOrdinal(d3.schemeCategory20);
 
+var colorCategories = [
+  {"key":"Health Impacts", "value":"#fee8c8"},
+  {"key":"Air Quality", "value": "#fdbb84"},
+  {"key":"Water and Sanitation", "value":"#e34a33"},
+  {"key":"Water Resources", "value": "#edf8fb"},
+  {"key":"Agriculture", "value":"#bfd3e6"},
+  {"key":"Forests", "value":"#9ebcda"},
+  {"key":"Fisheries", "value":"#8c96c6"},
+  {"key":"Biodiversity and Habitat", "value": "#8856a7"},
+  {"key":"Climate and Energy", "value":"810f7c"}
+];
+
 var BAR_WIDTH = 10;
 
 var svg1 = d3.select("#chart1").append("svg")
@@ -33,7 +45,10 @@ var xAxis2 = svg2.append("g")
 var yAxis2 = svg2.append("g")
 	.attr("class", "axis y--axis");
 
-function update(svgChart, myData, attrX, attrY, xAxis, yAxis, titleDiv, title){
+var legend1 = d3.select("legend1");
+var legend2 = d3.select("legend2");
+
+function update(svgChart, myData, attrX, attrY, xAxis, yAxis, legend){
     var fnAccX = function(d) { return d[attrX]; };
     var fnAccY = function(d) { return d[attrY]; };
 
@@ -62,7 +77,7 @@ function update(svgChart, myData, attrX, attrY, xAxis, yAxis, titleDiv, title){
     bars.merge(barsEnter)
     	.attr("x", 0)
       .attr("y", function(d,i) {return (spaceForBar/2 + i * (BAR_WIDTH + spaceForBar));})
-      .style("fill", function (d) {return getColorByCategory(d.category);})
+      .style("fill", function (d) {return setColorByCategory(d.category);})
       .attr("height", BAR_WIDTH)
     	.transition().duration(1000)
     	.attr("width", function(d) {
@@ -75,28 +90,41 @@ function update(svgChart, myData, attrX, attrY, xAxis, yAxis, titleDiv, title){
             }
         });
 
-      xAxis
-      	.transition()
+      xAxis.transition()
         .duration(1000)
       	.call(d3.axisTop(xScale).ticks(10));
 
-      yAxis
-      	.transition()
+      yAxis.transition()
         .duration(1000)
       	.call(d3.axisLeft()
       		.scale(yScale).tickArguments(function(d) {return yScale(fnAccY(d));}));
+
+      legend.append('g')
+        .data(colorCategories)
+        .attr('class', 'legend')
+        .attr('transform', function(d, i) {
+          return 'translate(10,' + i * 10 + ')';
+        })
+        .append('rect')
+        .attr('width', 10)
+        .attr('height', 10)
+        .style('fill', function (d) {
+          return d.color;
+        })
+        .append('text')
+        .attr('x', 10 + 1)
+        .attr('y', 10 - 1)
+        .text(function(d) {
+          return d.key;
+        });
 }
 
-function getColorByCategory(category) {
-  if (category === "Health Impacts") return "#fee8c8";
-  else if (category === "Air Quality") return "#fdbb84";
-  else if (category === "Water and Sanitation") return "#e34a33";
-  else if (category === "Water Resources") return "#edf8fb";
-  else if (category === "Agriculture") return "#bfd3e6";
-  else if (category === "Forests") return "#9ebcda";
-  else if (category === "Fisheries") return "#8c96c6";
-  else if (category === "Biodiversity and Habitat") return "#8856a7";
-  else if (category === "Climate and Energy") return "810f7c";
+function setColorByCategory(category) {
+  for (var i=0; i < colorCategories.length; i++){
+    if(colorCategories[i].key === category){
+      return colorCategories[i].value;
+    }
+  }
 }
 
 function selectedCountry(myData) {
@@ -105,13 +133,13 @@ function selectedCountry(myData) {
   country.select("h1").text(myData.Country);
 
   var rank = d3.select("#rank");
-  rank.select("p").text("Rank: " + myData.Rank);
+  rank.select("p").text("Overall Rank: " + myData.Rank + "/178");
 
   var EPI = d3.select("#EPI");
-  EPI.select("p").text("EPI: " + myData.EPI);
+  EPI.select("p").text("EPI Score: " + myData.EPI);
 
   var change = d3.select("#change");
-  change.select("p").text("10-Year Percent Change: " + myData["10-Year Percent Change"]);
+  change.select("p").text("10-Year Change: " + myData["10-Year Percent Change"] + "%");
 
   var dataChart1 = [];
   var dataChart2 = [];
@@ -179,12 +207,12 @@ function selectedCountry(myData) {
     });
   }
   var title1 = d3.select("#titleChart1").select("p")
-    .text("Enviromental Healh: " + myData["Enviromental Healh"].Value);
+    .text("Enviromental Healh Score: " + myData["Enviromental Healh"].Value);
   var title2 = d3.select("#titleChart2").select("p")
-    .text("Ecosystem Vitality: " + myData["Ecosystem Vitality"].Value);
+    .text("Ecosystem Vitality Score: " + myData["Ecosystem Vitality"].Value);
 
-  update(svg1, dataChart1, "value", "key", xAxis1, yAxis1);
-  update(svg2, dataChart2, "value", "key", xAxis2, yAxis2);
+  update(svg1, dataChart1, "value", "key", xAxis1, yAxis1, legend1);
+  update(svg2, dataChart2, "value", "key", xAxis2, yAxis2, legend2);
 
 }
 
@@ -282,13 +310,24 @@ d3.csv("epi2014.csv", function(err, data) {
       div.innerHTML += 'EPI SCORE<br>';
       for (var i = 0; i < values.length; i++) {
       	div.innerHTML +=
-        	'<i style="background:' + setColorByEPI(values[i] + 1) + '"></i> ' 									+ values[i] + (values[i + 1] ? ' &ndash; ' + values[i + 1] + 												'<br>' : '+');
+        	'<i style="background:' + setColorByForLegend(values[i] + 1) + '"></i> ' 									+ values[i] + (values[i + 1] ? ' &ndash; ' + values[i + 1] + 												'<br>' : '+');
       }
       return div;
     };
     legend.addTo(map);
 	});
 
+  function setColorByForLegend(epi) {
+    if (epi > 90) return "#1a9850";
+    else if (epi > 80) return "#66bd63";
+    else if (epi > 70) return "#a6d96a";
+    else if (epi> 60) return "#d9ef8b";
+    else if (epi > 50) return "#ffffbf";
+    else if (epi > 40) return "#fee08b";
+    else if (epi > 30) return "#fdae61";
+    else if (epi > 20) return "#f46d43";
+    else if (epi > 10) return "#d73027";
+  }
 
   function setColorByEPI(indicators) {
     if (indicators === undefined) return "#ffffbf";

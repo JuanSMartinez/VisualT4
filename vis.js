@@ -73,7 +73,14 @@ function update_h(svgChart, myData, attrX, attrY, xAxis, yAxis){
       .attr("height", BAR_WIDTH)
     	.transition().duration(1000)
     	.attr("width", function(d) {
-          return (xScale_h(fnAccX(d)));
+            var value = xScale_h(fnAccX(d));
+            if(isNaN(value)){
+                return 0;
+            }
+            else {
+                return value;
+            }
+
         });
 
         xAxis

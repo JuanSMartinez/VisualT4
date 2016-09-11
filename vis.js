@@ -1,6 +1,6 @@
 
 var margin = {top: 20, right: 10, bottom: 30, left: 200},
-    width = 900 - margin.left - margin.right,
+    width = 830 - margin.left - margin.right,
     height = 300 - margin.top - margin.bottom;
 
 var xScale = d3.scaleLinear().range([0, width]);
@@ -9,16 +9,19 @@ var yScale = d3.scaleBand().range([0, height]);
 
 var colScale = d3.scaleOrdinal(d3.schemeCategory20);
 
-var colorCategories = [
+var cat1 = [
   {"key":"Health Impacts", "value":"#fee8c8"},
   {"key":"Air Quality", "value": "#fdbb84"},
   {"key":"Water and Sanitation", "value":"#e34a33"},
+];
+
+var cat2 = [
   {"key":"Water Resources", "value": "#edf8fb"},
   {"key":"Agriculture", "value":"#bfd3e6"},
   {"key":"Forests", "value":"#9ebcda"},
   {"key":"Fisheries", "value":"#8c96c6"},
   {"key":"Biodiversity and Habitat", "value": "#8856a7"},
-  {"key":"Climate and Energy", "value":"810f7c"}
+  {"key":"Climate and Energy", "value":"#810f7c"}
 ];
 
 var BAR_WIDTH = 10;
@@ -45,10 +48,10 @@ var xAxis2 = svg2.append("g")
 var yAxis2 = svg2.append("g")
 	.attr("class", "axis y--axis");
 
-var legend1 = d3.select("legend1");
-var legend2 = d3.select("legend2");
+var legend1 = d3.select("#legend1");
+var legend2 = d3.select("#legend2");
 
-function update(svgChart, myData, attrX, attrY, xAxis, yAxis, legend){
+function update(svgChart, myData, attrX, attrY, xAxis, yAxis, legend, colorCategories){
     var fnAccX = function(d) { return d[attrX]; };
     var fnAccY = function(d) { return d[attrY]; };
 
@@ -99,30 +102,33 @@ function update(svgChart, myData, attrX, attrY, xAxis, yAxis, legend){
       	.call(d3.axisLeft()
       		.scale(yScale).tickArguments(function(d) {return yScale(fnAccY(d));}));
 
-      legend.append('g')
-        .data(colorCategories)
-        .attr('class', 'legend')
-        .attr('transform', function(d, i) {
-          return 'translate(10,' + i * 10 + ')';
-        })
-        .append('rect')
-        .attr('width', 10)
-        .attr('height', 10)
-        .style('fill', function (d) {
-          return d.color;
-        })
-        .append('text')
-        .attr('x', 10 + 1)
-        .attr('y', 10 - 1)
-        .text(function(d) {
-          return d.key;
-        });
+      var group = legend.selectAll("div")
+          .data(colorCategories.map(function(d){return d.key;}))
+          .enter().append("div")
+          .attr("transform", function(d, i) { return "translate(0," + (i * 20) + ")"; });
+
+      group.append("i")
+          .attr("width", 18)
+          .attr("height", 18)
+          .style("background", function(d,i){
+            console.log(colorCategories[i].key + " " + colorCategories[i].value);
+            return colorCategories[i].value;}
+          );
+
+      group.append("text")
+          .style("font-size","9pt")
+          .text(function(d,i){return colorCategories[i].key;});
 }
 
 function setColorByCategory(category) {
-  for (var i=0; i < colorCategories.length; i++){
-    if(colorCategories[i].key === category){
-      return colorCategories[i].value;
+  for (var i=0; i < cat1.length; i++){
+    if(cat1[i].key === category){
+      return cat1[i].value;
+    }
+  }
+  for (i=0; i < cat2.length; i++){
+    if(cat2[i].key === category){
+      return cat2[i].value;
     }
   }
 }
@@ -211,8 +217,8 @@ function selectedCountry(myData) {
   var title2 = d3.select("#titleChart2").select("p")
     .text("Ecosystem Vitality Score: " + myData["Ecosystem Vitality"].Value);
 
-  update(svg1, dataChart1, "value", "key", xAxis1, yAxis1, legend1);
-  update(svg2, dataChart2, "value", "key", xAxis2, yAxis2, legend2);
+  update(svg1, dataChart1, "value", "key", xAxis1, yAxis1, legend1, cat1);
+  update(svg2, dataChart2, "value", "key", xAxis2, yAxis2, legend2, cat2);
 
 }
 
